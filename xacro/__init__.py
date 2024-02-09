@@ -69,6 +69,17 @@ def push_file(filename):
 
 
 def restore_filestack(oldstack):
+    """"Restores the previous filestack."
+    Parameters:
+        - oldstack (list): The previous filestack to be restored.
+    Returns:
+        - None: No return value.
+    Processing Logic:
+        - Updates global variable filestack.
+        - No new filestack is created.
+        - oldstack is assigned to filestack.
+        - Global variable filestack is updated."""
+    
     global filestack
     filestack = oldstack
 
@@ -99,12 +110,31 @@ class YamlListWrapper(list):
             return item
 
     def __getitem__(self, idx):
+        """"Returns a wrapped version of the element at the given index of the YamlListWrapper object.
+        Parameters:
+            - idx (int): The index of the element to be wrapped.
+        Returns:
+            - YamlListWrapper: A wrapped version of the element at the given index.
+        Processing Logic:
+            - Wrap element at given index.
+            - Use YamlListWrapper class.
+            - Use super() to access parent class.
+            - Return wrapped element."""
+        
         return YamlListWrapper.wrap(super(YamlListWrapper, self).__getitem__(idx))
 
 
 class YamlDictWrapper(dict):
     """Wrapper class providing dotted access to dict items"""
     def __getattr__(self, item):
+        """Returns:
+            - YamlListWrapper: A wrapped version of the value retrieved from the super class.
+        Processing Logic:
+            - Wrap value in YamlListWrapper.
+            - Try to retrieve value from super class.
+            - If key error, raise XacroException.
+            - Format error message with key name."""
+        
         try:
             return YamlListWrapper.wrap(super(YamlDictWrapper, self).__getitem__(item))
         except KeyError:
@@ -132,6 +162,24 @@ def construct_angle_degrees(loader, node):
 
 
 def load_yaml(filename):
+    """Loads a YAML file and returns a YamlListWrapper object.
+    Parameters:
+        - filename (str): The name of the YAML file to be loaded.
+    Returns:
+        - YamlListWrapper: A wrapper object for the loaded YAML file.
+    Processing Logic:
+        - Imports the yaml module.
+        - Adds constructors for angle measurements.
+        - Raises an XacroException if yaml support is not available.
+        - Converts the filename to an absolute path.
+        - Opens the file.
+        - Pushes the file onto the file stack.
+        - Loads the YAML file using the yaml.safe_load() function.
+        - Wraps the loaded YAML file in a YamlListWrapper object.
+        - Closes the file.
+        - Restores the file stack.
+        - Appends the filename to the global list of included files."""
+    
     try:
         import yaml
         yaml.SafeLoader.add_constructor(u'!radians', construct_angle_radians)
@@ -172,12 +220,16 @@ class XacroException(Exception):
     """
 
     def __init__(self, msg=None, suffix=None, exc=None, macro=None):
+        """"""
+        
         super(XacroException, self).__init__(msg)
         self.suffix = suffix
         self.exc = exc
         self.macros = [] if macro is None else [macro]
 
     def __str__(self):
+        """"""
+        
         items = [super(XacroException, self).__str__(), self.exc, self.suffix]
         return ' '.join([s for s in [str(e) for e in items] if s not in ['', 'None']])
 
@@ -205,6 +257,8 @@ def check_attrs(tag, required, optional):
 
 # deprecate non-namespaced use of xacro tags (issues #41, #59, #60)
 def deprecated_tag(tag_name=None, _issued=[False]):
+    """"""
+    
     if _issued[0]:
         return
 
@@ -238,6 +292,8 @@ def check_deprecated_tag(tag_name):
 
 class Macro(object):
     def __init__(self):
+        """"""
+        
         self.body = None  # original xml.dom.Node
         self.params = []  # parsed parameter names
         self.defaultmap = {}  # default parameter values
@@ -245,6 +301,8 @@ class Macro(object):
 
 
 def eval_extension(s):
+    """"""
+    
     if s == '$(cwd)':
         return os.getcwd()
     try:
@@ -260,6 +318,8 @@ def eval_extension(s):
 
 class Table(dict):
     def __init__(self, parent=None):
+        """"""
+        
         dict.__init__(self)
         if parent is None:
             parent = dict()  # Use empty dict to simplify lookup
@@ -275,6 +335,8 @@ class Table(dict):
 
     @staticmethod
     def _eval_literal(value):
+        """"""
+        
         if isinstance(value, str):
             # remove single quotes from escaped string
             if len(value) >= 2 and value[0] == "'" and value[-1] == "'":
@@ -293,6 +355,8 @@ class Table(dict):
         return value
 
     def _resolve_(self, key):
+        """"""
+        
         # lazy evaluation
         if key in self.unevaluated:
             if key in self.recursive:
@@ -311,12 +375,16 @@ class Table(dict):
         return value
 
     def __getitem__(self, key):
+        """"""
+        
         if dict.__contains__(self, key):
             return self._resolve_(key)
         else:
             return self.parent[key]
 
     def _setitem(self, key, value, unevaluated):
+        """"""
+        
         if key in self.root:
             warning("redefining global symbol: %s" % key)
             print_location(filestack)
@@ -334,13 +402,19 @@ class Table(dict):
                 indent=self.depth * ' ', key=key, value=value, loc=filestack[-1]), file=sys.stderr)
 
     def __setitem__(self, key, value):
+        """"""
+        
         self._setitem(key, value, unevaluated=True)
 
     def __contains__(self, key):
+        """"""
+        
         return \
             dict.__contains__(self, key) or (key in self.parent)
 
     def __str__(self):
+        """"""
+        
         s = dict.__str__(self)
         if self.parent is not None:
             s += "\n  parent: "
@@ -348,6 +422,8 @@ class Table(dict):
         return s
 
     def top(self):
+        """"""
+        
         p = self
         while p.parent is not p.root:
             p = p.parent
@@ -357,11 +433,15 @@ class Table(dict):
 class NameSpace(object):
     # dot access (namespace.property) is forwarded to getitem()
     def __getattr__(self, item):
+        """"""
+        
         return self.__getitem__(item)
 
 
 class PropertyNameSpace(Table, NameSpace):
     def __init__(self, parent=None):
+        """"""
+        
         super(PropertyNameSpace, self).__init__(parent)
 
 
