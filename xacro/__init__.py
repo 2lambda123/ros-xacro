@@ -43,6 +43,7 @@ from .cli import process_args
 from .color import error, message, warning
 from .xmlutils import opt_attrs, reqd_attrs, first_child_element, \
     next_sibling_element, replace_node
+import defusedxml.minidom
 
 
 # Dictionary of substitution args
@@ -983,9 +984,9 @@ def parse(inp, filename=None):
 
     try:
         if isinstance(inp, str):
-            return xml.dom.minidom.parseString(inp)
+            return defusedxml.minidom.parseString(inp)
         elif hasattr(inp, 'read'):
-            return xml.dom.minidom.parse(inp)
+            return defusedxml.minidom.parse(inp)
         return inp
 
     finally:
